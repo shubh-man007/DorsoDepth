@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DorsoDepth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Dark theme styling */
+        body {
+            background-color: #1c1c1c;
+            color: #cfcfcf;
+            font-family: 'Fira Mono', monospace;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container-fluid {
+            background-color: #1c1c1c;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header styling */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            color: #e04f5f;
+            font-size: 2.5rem;
+            font-weight: 500;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .header .icon {
+            margin-right: 0.75rem;
+            font-size: 2.2rem;
+        }
+
+        /* Card styling */
+        .card {
+            background-color: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: #333;
+            border-bottom: 1px solid #444;
+            color: #ffffff;
+            font-weight: 500;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-header .icon {
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .card-body {
+            padding: 2.5rem;
+        }
+
+        /* Upload area styling */
+        .upload-area {
+            border: 2px dashed #e04f5f;
+            border-radius: 16px;
+            padding: 4rem 2rem;
+            text-align: center;
+            background-color: #2a2a2a;
+            transition: all 0.3s ease;
+            color: #cfcfcf;
+            margin-bottom: 2.5rem;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #f9d9dd;
+            background-color: #333;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #e04f5f;
+            background-color: #333;
+            transform: scale(1.02);
+        }
+
+        .upload-area .upload-icon {
+            color: #e04f5f;
+            margin-bottom: 1.5rem;
+            font-size: 3rem;
+        }
+
+        .upload-area h5 {
+            color: #ffffff;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .upload-area p {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Form styling */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            color: #ffffff;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            background-color: #333;
+            border: 1px solid #444;
+            color: #cfcfcf;
+            font-family: 'Fira Mono', monospace;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            background-color: #333;
+            border-color: #e04f5f;
+            color: #cfcfcf;
+            box-shadow: 0 0 0 3px rgba(224, 79, 95, 0.15);
+            outline: none;
+        }
+
+        .form-control-plaintext {
+            color: #cfcfcf;
+            background-color: #333;
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Button styling */
+        .btn {
+            font-family: 'Fira Mono', monospace;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .btn .icon {
+            margin-right: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: #e04f5f;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #f9d9dd;
+            color: #1c1c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(224, 79, 95, 0.3);
+        }
+
+        .btn-outline-primary {
+            background-color: transparent;
+            border: 2px solid #e04f5f;
+            color: #e04f5f;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #e04f5f;
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .btn-sm {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-lg {
+            padding: 1.25rem 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Emoji action buttons */
+        .action-emoji {
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: all 0.2s ease;
+            display: inline-block;
+            padding: 0.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        .action-emoji:hover {
+            background-color: rgba(224, 79, 95, 0.1);
+            transform: scale(1.1);
+        }
+
+        .action-emoji:last-child {
+            margin-right: 0;
+        }
+
+        /* Job card styling */
+        .jobs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .job-card {
+            background-color: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .job-card:hover {
+            transform: translateY(-4px);
+            border-color: #e04f5f;
+            box-shadow: 0 8px 30px rgba(224, 79, 95, 0.2);
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .job-title {
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 1rem;
+            margin: 0;
+            flex: 1;
+            margin-right: 1rem;
+            word-break: break-word;
+        }
+
+        .job-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .job-info-item {
+            color: #cfcfcf;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .job-info-item .icon {
+            margin-right: 0.75rem;
+            color: #888;
+            width: 1rem;
+            text-align: center;
+        }
+
+        .job-actions {
+            display: flex;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #333;
+        }
+
+        /* Status badges */
+        .status-badge {
+            font-size: 0.75rem;
+            font-family: 'Fira Mono', monospace;
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .status-badge .icon {
+            margin-right: 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .bg-secondary {
+            background-color: #6c757d;
+            color: #ffffff;
+        }
+
+        .bg-warning {
+            background-color: #ffc107;
+            color: #1c1c1c;
+        }
+
+        .bg-success {
+            background-color: #28a745;
+            color: #ffffff;
+        }
+
+        .bg-danger {
+            background-color: #dc3545;
+            color: #ffffff;
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-dialog {
+            margin: 5% auto;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .modal-dialog-centered {
+            display: flex;
+            align-items: center;
+            min-height: calc(100% - 2rem);
+        }
+
+        .modal-lg .modal-dialog {
+            max-width: 800px;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #444;
+            color: #ffffff;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+        }
+
+        .modal-title {
+            color: #ffffff;
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            color: #cfcfcf;
+            padding: 2rem;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #cfcfcf;
+            cursor: pointer;
+            border-radius: 8px;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-close:hover {
+            color: #e04f5f;
+            background-color: rgba(224, 79, 95, 0.1);
+        }
+
+        /* Alert styling */
+        .alert {
+            background-color: #2a2a2a;
+            border: 1px solid #333;
+            color: #cfcfcf;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+        }
+
+        .alert-success {
+            background-color: #1e4d2b;
+            border-color: #28a745;
+            color: #d4edda;
+        }
+
+        .alert-danger {
+            background-color: #4d1e1e;
+            border-color: #dc3545;
+            color: #f8d7da;
+        }
+
+        /* Empty state styling */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #888;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: #555;
+        }
+
+        .empty-state h5 {
+            color: #ffffff;
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* Loading spinner */
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border: 0.3em solid rgba(224, 79, 95, 0.2);
+            border-top-color: #e04f5f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+
+        /* Processing dots animation */
+        #processingDots {
+            color: #e04f5f;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .jobs-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .upload-area {
+                padding: 3rem 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .card-body {
+                padding: 2rem;
+            }
+
+            .card-header {
+                padding: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <header class="header">
+            <h1>
+                <i class="fas fa-brain icon"></i>
+                DorsoDepth
+            </h1>
+        </header>
+
+        <div class="container">
+            <!-- Upload Section -->
+            <div id="upload-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>
+                            <i class="fas fa-upload icon"></i>
+                            Upload
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="upload-area" id="uploadArea">
+                                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                <h5>Drag & Drop your video here</h5>
+                                <p>or click to browse</p>
+                                <input type="file" id="videoFile" name="file" accept="video/*" style="display: none;" required>
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('videoFile').click()">
+                                    <i class="fas fa-folder-open icon"></i>
+                                    Choose File
+                                </button>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fps" class="form-label">Frames per Second (FPS)</label>
+                                    <input type="number" class="form-control" id="fps" name="fps" value="1" min="1" max="30">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Selected File</label>
+                                    <div id="fileInfo" class="form-control-plaintext">No file selected</div>
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center;">
+                                <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                                    <i class="fas fa-play icon"></i>
+                                    Start Processing
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Jobs Section -->
+            <div id="jobs-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>
+                            <i class="fas fa-tasks icon"></i>
+                            Processing<span id="processingDots">...</span>
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadJobs()">
+                            <i class="fas fa-sync-alt icon"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="jobsList" class="jobs-grid">
+                            <!-- Jobs will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body" style="text-align: center; padding: 3rem 2rem;">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5 style="margin: 2rem 0 1rem 0; color: #ffffff;">Processing Video...</h5>
+                    <p style="color: #888; margin: 0;">This may take a few minutes depending on video length and FPS</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Details Modal -->
+    <div class="modal fade" id="jobModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Job Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">×</button>
+                </div>
+                <div class="modal-body" id="jobModalBody">
+                    <!-- Job details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Global variables
+        let currentJobId = null;
+        let statusCheckInterval = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadJobs();
+            setupUploadArea();
+            setupForm();
+            animateProcessingDots();
+            setupModals();
+        });
+
+        // Setup drag and drop upload area
+        function setupUploadArea() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('videoFile');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    updateFileInfo(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    updateFileInfo(e.target.files[0]);
+                }
+            });
+        }
+
+        // Update file information display
+        function updateFileInfo(file) {
+            const fileInfo = document.getElementById('fileInfo');
+            const size = (file.size / (1024 * 1024)).toFixed(2);
+            fileInfo.textContent = `${file.name} (${size} MB)`;
+        }
+
+        // Setup form submission
+        function setupForm() {
+            const form = document.getElementById('uploadForm');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await uploadVideo();
+            });
+        }
+
+        // Upload video
+        async function uploadVideo() {
+            const formData = new FormData();
+            const fileInput = document.getElementById('videoFile');
+            const fpsInput = document.getElementById('fps');
+
+            if (!fileInput.files[0]) {
+                alert('Please select a video file');
+                return;
+            }
+
+            formData.append('file', fileInput.files[0]);
+            formData.append('fps', fpsInput.value);
+
+            try {
+                // Show loading modal
+                document.getElementById('loadingModal').style.display = 'block';
+
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentJobId = result.job_id;
+                    document.getElementById('loadingModal').style.display = 'none';
+                    
+                    // Show success message
+                    showAlert('Video uploaded successfully! Processing started.', 'success');
+                    
+                    // Reset form
+                    document.getElementById('uploadForm').reset();
+                    document.getElementById('fileInfo').textContent = 'No file selected';
+                    
+                    // Start monitoring job status
+                    startStatusMonitoring(result.job_id);
+                    
+                    // Refresh jobs list
+                    loadJobs();
+                } else {
+                    document.getElementById('loadingModal').style.display = 'none';
+                    showAlert(result.detail || 'Upload failed', 'danger');
+                }
+            } catch (error) {
+                document.getElementById('loadingModal').style.display = 'none';
+                showAlert('Upload failed: ' + error.message, 'danger');
+            }
+        }
+
+        // Load jobs list
+        async function loadJobs() {
+            try {
+                const response = await fetch('/api/jobs');
+                const data = await response.json();
+
+                const jobsList = document.getElementById('jobsList');
+                jobsList.innerHTML = '';
+
+                if (data.jobs.length === 0) {
+                    jobsList.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <i class="fas fa-inbox icon"></i>
+                            <h5>No jobs found</h5>
+                            <p>Upload a video to get started!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                data.jobs.forEach(job => {
+                    const jobCard = createJobCard(job);
+                    jobsList.appendChild(jobCard);
+                });
+            } catch (error) {
+                showAlert('Failed to load jobs: ' + error.message, 'danger');
+            }
+        }
+
+        // Create job card
+        function createJobCard(job) {
+            const jobCard = document.createElement('div');
+            jobCard.className = 'job-card';
+            
+            const statusClass = getStatusClass(job.status);
+            const statusIcon = getStatusIcon(job.status);
+            
+            jobCard.innerHTML = `
+                <div class="job-header">
+                    <h6 class="job-title" title="${job.original_filename}">
+                        ${job.original_filename}
+                    </h6>
+                    <span class="badge ${statusClass} status-badge">
+                        <i class="${statusIcon} icon"></i>${job.status}
+                    </span>
+                </div>
+                
+                <div class="job-info">
+                    <div class="job-info-item">
+                        <i class="fas fa-clock icon"></i>
+                        ${new Date(job.created_at).toLocaleString()}
+                    </div>
+                    
+                    <div class="job-info-item">
+                        <i class="fas fa-film icon"></i>
+                        FPS: ${job.fps}
+                    </div>
+                </div>
+                
+                <div class="job-actions">
+                    ${job.status === 'completed' ? `
+                        <a href="/api/jobs/${job.job_id}/download" class="action-emoji" title="Download Result">📥</a>
+                    ` : ''}
+                    <span class="action-emoji" onclick="showJobDetails('${job.job_id}')" title="Details">ℹ️</span>
+                    <span class="action-emoji" onclick="deleteJob('${job.job_id}')" title="Delete">🗑️</span>
+                </div>
+            `;
+            
+            return jobCard;
+        }
+
+        // Get status class for Bootstrap
+        function getStatusClass(status) {
+            switch (status) {
+                case 'uploaded': return 'bg-secondary';
+                case 'processing': return 'bg-warning';
+                case 'completed': return 'bg-success';
+                case 'failed': return 'bg-danger';
+                default: return 'bg-secondary';
+            }
+        }
+
+        // Get status icon
+        function getStatusIcon(status) {
+            switch (status) {
+                case 'uploaded': return 'fas fa-upload';
+                case 'processing': return 'fas fa-cog fa-spin';
+                case 'completed': return 'fas fa-check';
+                case 'failed': return 'fas fa-times';
+                default: return 'fas fa-question';
+            }
+        }
+
+        // Show job details
+        async function showJobDetails(jobId) {
+            try {
+                const response = await fetch(`/api/jobs/${jobId}`);
+                const job = await response.json();
+
+                const modalBody = document.getElementById('jobModalBody');
+                modalBody.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div>
+                            <h6 style="color: #ffffff; margin-bottom: 1.5rem;">Job Information</h6>
+                            <div style="background-color: #333; padding: 1.5rem; border-radius: 12px;">
+                                <div style="margin-bottom: 1rem;"><strong>Job ID:</strong> ${job.job_id}</div>
+                                <div style="margin-bottom: 1rem;"><strong>Filename:</strong> ${job.original_filename}</div>
+                                <div style="margin-bottom: 1rem;"><strong>Status:</strong> ${job.status}</div>
+                                <div style="margin-bottom: 1rem;"><strong>FPS:</strong> ${job.fps}</div>
+                                <div style="margin-bottom: 1rem;"><strong>Created:</strong> ${new Date(job.created_at).toLocaleString()}</div>
+                                <div><strong>Updated:</strong> ${new Date(job.updated_at).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h6 style="color: #ffffff; margin-bottom: 1.5rem;">Actions</h6>
+                            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                ${job.status === 'completed' ? `
+                                    <a href="/api/jobs/${job.job_id}/download" class="btn btn-primary">
+                                        <i class="fas fa-download icon"></i>Download Heatmap Video
+                                    </a>
+                                ` : ''}
+                                <button class="btn btn-outline-primary" onclick="deleteJob('${job.job_id}'); document.getElementById('jobModal').style.display = 'none';">
+                                    <i class="fas fa-trash icon"></i>Delete Job
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    ${job.error_message ? `
+                        <div style="margin-top: 2rem;">
+                            <h6 style="color: #ffffff; margin-bottom: 1rem;">Error Details</h6>
+                            <div class="alert alert-danger">
+                                ${job.error_message}
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+
+                document.getElementById('jobModal').style.display = 'block';
+            } catch (error) {
+                showAlert('Failed to load job details: ' + error.message, 'danger');
+            }
+        }
+
+        // Delete job
+        async function deleteJob(jobId) {
+            if (!confirm('Are you sure you want to delete this job?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/jobs/${jobId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('Job deleted successfully', 'success');
+                    loadJobs();
+                } else {
+                    const result = await response.json();
+                    showAlert(result.detail || 'Failed to delete job', 'danger');
+                }
+            } catch (error) {
+                showAlert('Failed to delete job: ' + error.message, 'danger');
+            }
+        }
+
+        // Start monitoring job status
+        function startStatusMonitoring(jobId) {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+
+            statusCheckInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/jobs/${jobId}`);
+                    const job = await response.json();
+
+                    if (job.status === 'completed' || job.status === 'failed') {
+                        clearInterval(statusCheckInterval);
+                        statusCheckInterval = null;
+                        loadJobs();
+                        
+                        if (job.status === 'completed') {
+                            showAlert('Video processing completed! You can now download the result.', 'success');
+                        } else {
+                            showAlert('Video processing failed. Check job details for more information.', 'danger');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Status check failed:', error);
+                }
+            }, 5000); // Check every 5 seconds
+        }
+
+        // Setup modals
+        function setupModals() {
+            // Close modals when clicking outside
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+
+            // Close modals when clicking close button
+            document.querySelectorAll('.btn-close').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.modal').style.display = 'none';
+                });
+            });
+        }
+
+        // Animate processing dots
+        function animateProcessingDots() {
+            const dotsElement = document.getElementById('processingDots');
+            let dots = '';
+            let count = 0;
+            
+            setInterval(() => {
+                count = (count + 1) % 4;
+                dots = '.'.repeat(count);
+                if (dotsElement) {
+                    dotsElement.textContent = dots;
+                }
+            }, 500);
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; padding: 1rem; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: inherit; float: right; font-size: 1.2em; cursor: pointer; margin-left: 1rem;">×</button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

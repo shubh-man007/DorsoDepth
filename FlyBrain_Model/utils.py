@@ -19,6 +19,7 @@ from torch_geometric.utils import from_networkx
 import networkx as nx
 
 
+
 def get_data(ROOT_DIR):
     if os.path.exists(ROOT_DIR):
         CSV_PATH_TRAIN = os.path.join(ROOT_DIR, "data/nyu2_train.csv")
@@ -39,16 +40,8 @@ def get_data(ROOT_DIR):
         print(f"Root Directory: {ROOT_DIR}\n not found.")
 
 
-
-
 class DepthDataset(Dataset):
     def __init__(self, dataframe, ROOT_DIR, img_height=240, img_width=320, transform=None):
-        """
-        :param dataframe: pd.DataFrame [rgb, depth]
-        :param root_dir: folder dataframe
-        :param img_height, img_width: resize to
-        :param transform: augmentation
-        """
         self.df = dataframe.reset_index(drop=True)
         self.root_dir = ROOT_DIR
         self.img_height = img_height
@@ -73,22 +66,17 @@ class DepthDataset(Dataset):
         rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2RGB)
         rgb_img = cv2.resize(rgb_img, (self.img_width, self.img_height))
 
-        # Depth 
         depth_img = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
         depth_img = cv2.resize(depth_img, (self.img_width, self.img_height))
 
-        # to float32
         rgb_img = rgb_img.astype(np.float32) / 255.0
         depth_img = depth_img.astype(np.float32)
 
-        # to tensor PyTorch: (C,H,W)
         rgb_tensor = torch.from_numpy(np.transpose(rgb_img, (2,0,1)))   # (3, H, W)
         depth_tensor = torch.from_numpy(depth_img).unsqueeze(0)         # (1, H, W)
 
         return rgb_tensor, depth_tensor
     
-
-
 
 def build_grid_edge_index(H, W, connectivity=4):
     nodes = H * W
@@ -113,50 +101,36 @@ def build_grid_edge_index(H, W, connectivity=4):
     return edge_index
 
 
-
-
 class FlyDepth(nn.Module):
     def __init__(self, cnn_out_channels=64, gnn_hidden_dim=64, num_gnn_layers=2, fly_embed_dim=64):
         super(FlyDepth, self).__init__()
-        # 1. CNN Backbone: Use a pretrained ResNet-18.
         backbone = resnet18(pretrained=True)
         self.cnn_backbone = nn.Sequential(*list(backbone.children())[:-2])
-        # Reduce channels from 512 to cnn_out_channels.
         self.cnn_reducer = nn.Conv2d(512, cnn_out_channels, kernel_size=1)
         
-        # 2. GNN Layers: Stack of GCNConv layers.
         self.gnn_layers = nn.ModuleList()
         in_channels = cnn_out_channels
         for _ in range(num_gnn_layers):
             self.gnn_layers.append(GCNConv(in_channels, gnn_hidden_dim))
             in_channels = gnn_hidden_dim
         
-        # 3. FlyBrain Prior: A learnable embedding per node.
-        # Assume fixed grid size after CNN (e.g., if feature map is 20x30, then num_nodes=600).
-        self.num_nodes = 600  # Adjust this value to match your CNN feature map size.
+        self.num_nodes = 600  
         self.fly_prior = nn.Embedding(self.num_nodes, fly_embed_dim)
         
-        # 4. Fusion: Fuse GNN output with the fly prior.
         self.fusion = nn.Linear(gnn_hidden_dim + fly_embed_dim, gnn_hidden_dim)
         
-        # 5. Decoder: Upsample fused grid features back to a dense depth map.
         self.decoder = nn.Sequential(
             nn.Conv2d(gnn_hidden_dim, 64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.Conv2d(64, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 1, kernel_size=3, padding=1)  # Output single-channel depth map.
+            nn.Conv2d(32, 1, kernel_size=3, padding=1)  
         )
     
     def forward(self, x):
-        """
-        x: Input RGB image tensor of shape [B, 3, H_img, W_img]
-        Returns:
-            Depth map tensor of shape [B, 1, H_img, W_img]
-        """
         B, C, H_img, W_img = x.shape
-        # 1. Extract CNN features.
+        # Extract CNN features.
         feat_map = self.cnn_backbone(x)   # [B, 512, H_feat, W_feat]
         feat_map = self.cnn_reducer(feat_map)  # [B, cnn_out_channels, H_feat, W_feat]
         B, C_feat, H_feat, W_feat = feat_map.shape  # Use C_feat for channel dimension.
@@ -170,27 +144,24 @@ class FlyDepth(nn.Module):
             # Reshape CNN feature map into node features: [num_nodes, C_feat]
             node_feats = feat_map[b].view(C_feat, -1).t()  # [num_nodes, C_feat]
             
-            # 2. Pass node features through GNN layers.
             for conv in self.gnn_layers:
                 node_feats = conv(node_feats, edge_index)
                 node_feats = F.relu(node_feats)
             
-            # 3. Get fly brain prior embedding.
             if num_nodes != self.num_nodes:
                 fly_embed = self.fly_prior.weight[:num_nodes]
             else:
-                fly_embed = self.fly_prior.weight  # [num_nodes, fly_embed_dim]
+                fly_embed = self.fly_prior.weight  
             
-            # 4. Fusion: Concatenate and apply linear fusion.
-            fused = torch.cat([node_feats, fly_embed], dim=1)  # [num_nodes, gnn_hidden_dim + fly_embed_dim]
+            # [num_nodes, gnn_hidden_dim + fly_embed_dim]
+            fused = torch.cat([node_feats, fly_embed], dim=1)  
             fused = self.fusion(fused)  # [num_nodes, gnn_hidden_dim]
             
-            # 5. Reshape fused node features back to grid: [1, gnn_hidden_dim, H_feat, W_feat]
+            # [1, gnn_hidden_dim, H_feat, W_feat]
             fused_grid = fused.t().view(1, -1, H_feat, W_feat)
             
-            # 6. Decode fused features into a depth map.
-            depth_map = self.decoder(fused_grid)  # [1, 1, H_out, W_out]
-            # Upsample the predicted depth map to match the original input resolution.
+            # [1, 1, H_out, W_out]
+            depth_map = self.decoder(fused_grid)  
             depth_map = F.interpolate(depth_map, size=(H_img, W_img), mode='bilinear', align_corners=True)
             outputs.append(depth_map)
         
@@ -198,17 +169,7 @@ class FlyDepth(nn.Module):
         return outputs
 
 
-
-
 def guided_filter(I, p, radius=64, eps=1e-3):
-    """
-    Perform guided filtering to refine the depth map.
-    :param I: Guidance image (grayscale)
-    :param p: Input image to be filtered (depth map)
-    :param radius: Window radius
-    :param eps: Regularization term
-    :return: Filtered image
-    """
     mean_I = scipy.ndimage.uniform_filter(I, radius)
     mean_p = scipy.ndimage.uniform_filter(p, radius)
     corr_I = scipy.ndimage.uniform_filter(I * I, radius)
@@ -226,22 +187,18 @@ def guided_filter(I, p, radius=64, eps=1e-3):
     q = mean_a * I + mean_b
     return q
 
+
 def apply_guided_filter(rgb_img, pred_heatmap):
     # Convert RGB to grayscale
     guide_gray = np.mean(rgb_img, axis=2)  
     return guided_filter(guide_gray, pred_heatmap)
 
+
 def enhance_sharpness(image, alpha=1.5, beta=-0.5):
-    """
-    Apply unsharp masking to enhance the sharpness of the image.
-    :param image: Input grayscale image.
-    :param alpha: Weight for the original image.
-    :param beta: Weight for the blurred image.
-    :return: Sharpened image.
-    """
     blurred = cv2.GaussianBlur(image, (0, 0), 3)  # Gaussian Blur
     sharpened = cv2.addWeighted(image, alpha, blurred, beta, 0)
     return sharpened
+
 
 def test_and_visualize(model, data_loader, device, save_dir="output"):
     model.eval()
@@ -308,12 +265,7 @@ def test_and_visualize(model, data_loader, device, save_dir="output"):
             break
 
 
-
-
 def load_and_preprocess_image(image_path, img_height=480, img_width=640):
-    """
-    Load an image from disk, resize, normalize, and convert to a torch tensor.
-    """
     img = cv2.imread(image_path)
     if img is None:
         raise ValueError(f"Could not load image from: {image_path}")
@@ -328,11 +280,6 @@ def load_and_preprocess_image(image_path, img_height=480, img_width=640):
 
 
 def test_image_path(model, device, image_path, save_dir="output", img_height=480, img_width=640):
-    """
-    Load an image from a given path, run the model to predict depth, and apply guided filtering
-    and sharpness enhancement to refine the depth map.
-    Saves and visualizes the results.
-    """
     os.makedirs(os.path.join(save_dir, "rgb_images"), exist_ok=True)
     os.makedirs(os.path.join(save_dir, "predicted_depth"), exist_ok=True)
     os.makedirs(os.path.join(save_dir, "filtered_depth"), exist_ok=True)

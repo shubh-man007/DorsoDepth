@@ -12,6 +12,7 @@ import numpy as np
 from PIL import Image
 import io
 import tempfile
+import matplotlib.pyplot as plt
 
 from utils import FlyDepth, load_and_preprocess_image, apply_guided_filter, enhance_sharpness
 
@@ -46,6 +47,17 @@ class InferenceService:
         self.img_width = 640
         
         logger.info(f"Initialized inference service on device: {self.device}")
+    
+    def depth_to_colored_heatmap(self, depth_map: np.ndarray, colormap: str = 'viridis') -> np.ndarray:
+        depth_normalized = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min() + 1e-8)
+        cmap = plt.get_cmap(colormap)
+        colored_heatmap = cmap(depth_normalized)
+        
+        if colored_heatmap.shape[2] == 4:
+            colored_heatmap = colored_heatmap[:, :, :3]
+        
+        colored_heatmap = (colored_heatmap * 255).astype(np.uint8)
+        return colored_heatmap
     
     def load_model(self):
         try:
@@ -98,15 +110,15 @@ class InferenceService:
             )
             
             pred_depth_np = pred_depth.squeeze().cpu().numpy()
-            
             pred_depth_norm = cv2.normalize(pred_depth_np, None, 0, 255, cv2.NORM_MINMAX)
             pred_depth_norm = np.uint8(pred_depth_norm)
             
             refined_depth = apply_guided_filter(rgb_img, pred_depth_norm)
             refined_depth_sharp = enhance_sharpness(refined_depth)
+            colored_heatmap = self.depth_to_colored_heatmap(refined_depth_sharp, colormap='viridis')
             
             logger.info("Successfully ran inference on frame")
-            return refined_depth_sharp
+            return colored_heatmap
             
         except Exception as e:
             logger.error(f"Failed to run inference: {e}")
@@ -120,7 +132,13 @@ class InferenceService:
             if heatmap.dtype != np.uint8:
                 heatmap = heatmap.astype(np.uint8)
             
-            heatmap_image = Image.fromarray(heatmap)
+            if len(heatmap.shape) == 2:
+                heatmap_image = Image.fromarray(heatmap, mode='L')
+            elif len(heatmap.shape) == 3 and heatmap.shape[2] == 3:
+                heatmap_image = Image.fromarray(heatmap, mode='RGB')
+            else:
+                raise ValueError(f"Unsupported heatmap shape: {heatmap.shape}")
+            
             img_buffer = io.BytesIO()
             heatmap_image.save(img_buffer, format='JPEG')
             img_buffer.seek(0)
@@ -133,7 +151,7 @@ class InferenceService:
             )
             
             s3_path = f"s3://{bucket}/{key}"
-            logger.info(f"Uploaded heatmap to {s3_path}")
+            logger.info(f"Uploaded colored heatmap to {s3_path}")
             return s3_path
             
         except Exception as e:
@@ -208,4 +226,4 @@ class InferenceService:
 
 if __name__ == "__main__":
     service = InferenceService()
-    service.run() 
+    service.run()

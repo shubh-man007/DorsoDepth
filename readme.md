@@ -29,6 +29,14 @@ DorsoDepth utilizes a **distributed microservices architecture** for scalable, f
 
 ---
 
+### Result:
+#### Input (Input Video)
+https://github.com/user-attachments/assets/a63b0400-a3ad-46f6-b1cf-0ace34962a0f
+
+#### Output: (Generated Heatmap)
+
+
+### Architecture
 ```mermaid
 graph TD
     A[User uploads video] --> B[Golang Frame Extractor]

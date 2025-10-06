@@ -34,6 +34,7 @@ DorsoDepth utilizes a **distributed microservices architecture** for scalable, f
 https://github.com/user-attachments/assets/a63b0400-a3ad-46f6-b1cf-0ace34962a0f
 
 #### Output: (Generated Heatmap)
+https://github.com/user-attachments/assets/68b03873-323d-4b72-8760-5b74cd541834
 
 
 ### Architecture
